@@ -78,8 +78,8 @@
         </div>
       </div>
     </section>
-    <section class="container mt-3">
-      <form class="mb-3" onsubmit="searchRoutes(); return false;">
+    <section id='routes' class="container mt-3">
+      <h3>Доступные маршруты</h3> <form class="mb-3" onsubmit="searchRoutes(); return false;">
         <div class="row">
           <div class="col-md-6 mb-3">
           <label for="routeNameInput" class="form-label">Название маршрута</label>
@@ -110,6 +110,44 @@
       <tbody id="routesTableBody"></tbody>
     </table>
     <ul class="pagination" id="pagination"></ul>
+    </section>
+    <section>
+      <div class="container p-5">
+        <input type="number" id="test" class="test-input w-50">
+        <button class="test">Поиск</button>
+      </div>
+    </section>
+
+    <section class="guide-choise container my-5">
+        <h3>Доступные гиды по маршруту </h3>
+        <div class="selected-route">
+        </div>
+        <div class="row">
+            <div class="col-6 col-lg-4">
+                <select name="guide-lang" id = "select_language">
+                    <option value="">Язык экскурсии</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-4">
+                Опыт работы:
+                <input type="number" id="guide-input-expfrom" placeholder="от" class="w-25">
+                <input type="number" id="guide-input-expto" placeholder="до" class="w-25">
+            </div>
+        </div>
+        <table class="table table-bordered mt-3">
+            <thead class="<!--primary color-->">
+                <tr>
+                    <th scope="col"></th>
+                    <th scope="col">ФИО</th>
+                    <th scope="col">Языки</th>
+                    <th scope="col">Опыт работы</th>
+                    <th scope="col">Стоимость услуг в час</th>
+                    <th scope="col">Выбрать</th>
+                </tr>
+            </thead>
+            <tbody class="guide-table <!--secondary color-->">
+            </tbody>
+        </table>
     </section>
   </main>
   <footer>

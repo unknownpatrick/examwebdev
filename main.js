@@ -176,3 +176,128 @@ function highlightSearchResult(searchKeyword) {
         }
     }
 }
+
+function guideDownload() {
+    let id = document.querySelector('.test-input').value;
+    let guideTable = document.querySelector('.guide-table');
+    let url = new URL(`http://exam-2023-1-api.std-900.ist.mospolytech.ru/api/routes/${id}/guides`);
+    url.searchParams.append('api_key', API_KEY);
+    let xhr = new XMLHttpRequest();
+    let arroption = [];
+    xhr.open('GET', url);
+    xhr.responseType = 'json';
+    xhr.onload = function() {
+        arroption = [];
+        
+        // using the function:
+        removeOptions(document.getElementById('select_language'));
+        guideTable.innerHTML = '';
+        for (var i in this.response) {
+            console.log(i, 'id guid')
+            let row = document.createElement("tr");
+            row.innerHTML = `
+            <th scope="col" id = "${this.response[i].name}" name = "${i}"><img src="imgs/1.png"></th>
+            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].name}</th>
+            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].language}</th>
+            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].workExperience}</th>
+            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].pricePerHour}</th>
+            <th scope="col" id = "${this.response[i].name}" name = "${i}">
+            <button class = "rounded-3 choose" id = "${this.response[i].name}" name = "${i}">Выбрать</button></th> 
+            `; // в последнее значение класса, где кнопка, надо будет сунуть свое значение стиля))
+            if ((document.getElementById('guide-input-expfrom').value != '' &&
+            document.getElementById('guide-input-expfrom').value > this.response[i].workExperience) ||
+            (document.getElementById('guide-input-expto').value != '' &&
+            document.getElementById('guide-input-expto').value < this.response[i].workExperience) &&
+            document.getElementById('select_language').value == this.response[i].language) {
+                row.classList.add("d-none");
+            }
+            guideTable.append(row);
+            arroption.push(this.response[i].language);
+        }
+        console.log(arroption);
+        createselect(getoptionforselect(arroption));
+    }
+    xhr.send();
+}
+
+function guideOptions() {
+    var list = document.querySelectorAll('.guide-table tr');
+    var from = Number(document.getElementById('guide-input-expfrom').value);
+    var to = Number(document.getElementById('guide-input-expto').value);
+    for (var i in list) {
+        if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
+        (to == 0 || to >= list[i].cells[3].innerHTML) &&
+        (document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == 'Язык экскурсии' ||
+        document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == list[i].cells[2].innerHTML))
+        {
+            list[i].classList.remove("d-none");
+        }else{
+            list[i].classList.add("d-none");
+        }
+        console.log(list[i].cells[2].innerHTML);
+    }
+}
+
+// берем только уникальные языыки
+function getoptionforselect(q){
+    return [... new Set(q)];    
+}
+
+function removeOptions(selectElement) {
+    var i, L = selectElement.options.length - 1;
+    for(i = L; i >= 0; i--) {
+       selectElement.remove(i);
+    }
+    const selects = document.getElementById('select_language');
+    var option = document.createElement('option');
+    option.value = "";
+    option.innerHTML = "Язык экскурсии";
+    selects.appendChild(option);
+}  
+
+// тут мы создаем селект с языками (заполняем option-ами внутренность селекта)
+function createselect(arr){
+    const select = document.getElementById('select_language');
+    for(let i in arr){
+        console.log(arr[i]);
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.innerHTML = arr[i];
+        select.appendChild(opt);
+    }  
+}
+
+// тут мы обрабатываем события нажатия на кнопку выбрать в таблице гидов 
+function clickHandler(event) {
+    const screen = document.querySelector('.screen');
+    const target = event.target;
+    const row = document.querySelectorAll('th');
+    let idd = 0;
+    if (target.classList.contains('choose')) {
+        for(let i = 6; i< row.length; i++){
+            if(target.id == row[i].id){
+                row[i].classList.add('table-success');
+                idd = row[i].getAttribute('name')
+            }
+            else{
+                row[i].classList.remove('table-success');
+            }
+        }   
+        getIDguide(idd);
+    } 
+}
+//возвращаем id гида 
+function getIDguide(id){
+    console.log(id)
+    return id
+}
+
+
+window.onload = function() {
+    document.querySelector('.test').onclick = guideDownload;
+    document.getElementById('guide-input-expfrom').oninput = guideOptions;
+    document.getElementById('guide-input-expto').oninput = guideOptions;
+    document.getElementById('select_language').onchange = guideOptions;
+    const table = document.querySelector('.table');
+    table.addEventListener('click', clickHandler);
+}
