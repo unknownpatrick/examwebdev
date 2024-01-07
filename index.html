@@ -78,6 +78,39 @@
         </div>
       </div>
     </section>
+    <section class="container mt-3">
+      <form class="mb-3" onsubmit="searchRoutes(); return false;">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+          <label for="routeNameInput" class="form-label">Название маршрута</label>
+          <input type="text" class="form-control" id="routeNameInput" placeholder="Введите название маршрута">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="mainObjectSelect" class="form-label">Выберите объект</label>
+          <select class="form-control" id="mainObjectSelect">
+            <option value="" disabled selected>Выберите основную достопримечательность</option>
+            <option value="MainObject1">MainObject1</option>
+            <option value="MainObject2">MainObject2</option>
+            <option value="MainObject3">MainObject3</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Найти маршрут</button>
+      <button type="button" class="btn btn-secondary" onclick="resetSearch()">Сбросить</button>
+    </form>
+    <table class="table table-bordered table-striped text-center">
+      <thead class="thead-dark">
+        <tr>
+          <th>Название</th>
+          <th>Описание</th>
+          <th>Основные объекты</th>
+          <th>Выбрать</th>
+        </tr>
+        </thead>
+      <tbody id="routesTableBody"></tbody>
+    </table>
+    <ul class="pagination" id="pagination"></ul>
+    </section>
   </main>
   <footer>
 
