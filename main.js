@@ -212,10 +212,10 @@ function guideDownload(id) {
 }
 
 function guideOptions() {
-    var list = document.querySelectorAll('.guide-table tr');
-    var from = Number(document.getElementById('guide-input-expfrom').value);
-    var to = Number(document.getElementById('guide-input-expto').value);
-    for (var i in list) {
+    let list = document.querySelectorAll('.guide-table tr');
+    let from = Number(document.getElementById('guide-input-expfrom').value);
+    let to = Number(document.getElementById('guide-input-expto').value);
+    for (let i in list) {
       if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
         (to == 0 || to >= list[i].cells[3].innerHTML) &&
         (document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == 'Язык экскурсии' ||
@@ -234,12 +234,12 @@ function getoptionforselect(q){
 }
 
 function removeOptions(selectElement) {
-    var i, L = selectElement.options.length - 1;
+    let i, L = selectElement.options.length - 1;
     for(i = L; i >= 0; i--) {
        selectElement.remove(i);
     }
     const selects = document.getElementById('select_language');
-    var option = document.createElement('option');
+    let option = document.createElement('option');
     option.value = "";
     option.innerHTML = "Язык экскурсии";
     selects.appendChild(option);
@@ -249,7 +249,7 @@ function createselect(arr){
     const select = document.getElementById('select_language');
     for(let i in arr){
         console.log(arr[i]);
-        var opt = document.createElement('option');
+        let opt = document.createElement('option');
         opt.value = i;
         opt.innerHTML = arr[i];
         select.appendChild(opt);
