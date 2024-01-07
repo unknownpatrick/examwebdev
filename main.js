@@ -1,11 +1,8 @@
 'use strict'
 
-const API_KEY = '' // СЮДА СВОЙ АПИ КЕЙ 
+const API_KEY = '619d919d-e099-4371-b800-7aa4e606d6df' // СЮДА СВОЙ АПИ КЕЙ 
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchDataFromApi();
-});
-  
+ 
 let routesData;
 let filteredRoutes;
   
@@ -77,7 +74,7 @@ function addRoutesToTable(routes) {
   
       const selectButton = document.createElement('button');
       selectButton.innerText = 'Выбрать';
-      selectButton.addEventListener('click', () => handleSelectRoute(route.id));
+      selectButton.addEventListener('click', () => guideDownload(route.id));
       row.insertCell(3).appendChild(selectButton);
     });
 }
@@ -177,47 +174,41 @@ function highlightSearchResult(searchKeyword) {
     }
 }
 
-function guideDownload() {
-    let id = document.querySelector('.test-input').value;
+function guideDownload(id) {
     let guideTable = document.querySelector('.guide-table');
-    let url = new URL(`http://exam-2023-1-api.std-900.ist.mospolytech.ru/api/routes/${id}/guides`);
-    url.searchParams.append('api_key', API_KEY);
-    let xhr = new XMLHttpRequest();
     let arroption = [];
-    xhr.open('GET', url);
-    xhr.responseType = 'json';
-    xhr.onload = function() {
+    fetch (`http://exam-2023-1-api.std-900.ist.mospolytech.ru/api/routes/${id}/guides?api_key=${API_KEY}`)
+        .then(response => response.json())
+        .then(response => {
         arroption = [];
         
-        // using the function:
         removeOptions(document.getElementById('select_language'));
         guideTable.innerHTML = '';
-        for (var i in this.response) {
+        for (let i in response) {
             console.log(i, 'id guid')
             let row = document.createElement("tr");
             row.innerHTML = `
-            <th scope="col" id = "${this.response[i].name}" name = "${i}"><img src="imgs/1.png"></th>
-            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].name}</th>
-            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].language}</th>
-            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].workExperience}</th>
-            <th scope="col" id = "${this.response[i].name}" name = "${i}">${this.response[i].pricePerHour}</th>
-            <th scope="col" id = "${this.response[i].name}" name = "${i}">
-            <button class = "rounded-3 choose" id = "${this.response[i].name}" name = "${i}">Выбрать</button></th> 
+            <th scope="col" id = "${response[i].name}" name = "${i}"><img src="imgs/1.png"></th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].name}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].language}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].workExperience}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].pricePerHour}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">
+            <button class = "rounded-3 choose" id = "${response[i].name}" name = "${i}">Выбрать</button></th> 
             `; // в последнее значение класса, где кнопка, надо будет сунуть свое значение стиля))
             if ((document.getElementById('guide-input-expfrom').value != '' &&
-            document.getElementById('guide-input-expfrom').value > this.response[i].workExperience) ||
+            document.getElementById('guide-input-expfrom').value > response[i].workExperience) ||
             (document.getElementById('guide-input-expto').value != '' &&
-            document.getElementById('guide-input-expto').value < this.response[i].workExperience) &&
-            document.getElementById('select_language').value == this.response[i].language) {
+            document.getElementById('guide-input-expto').value < response[i].workExperience) &&
+            document.getElementById('select_language').value == response[i].language) {
                 row.classList.add("d-none");
             }
             guideTable.append(row);
-            arroption.push(this.response[i].language);
+            arroption.push(response[i].language);
         }
         console.log(arroption);
         createselect(getoptionforselect(arroption));
-    }
-    xhr.send();
+        });
 }
 
 function guideOptions() {
@@ -225,7 +216,7 @@ function guideOptions() {
     var from = Number(document.getElementById('guide-input-expfrom').value);
     var to = Number(document.getElementById('guide-input-expto').value);
     for (var i in list) {
-        if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
+      if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
         (to == 0 || to >= list[i].cells[3].innerHTML) &&
         (document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == 'Язык экскурсии' ||
         document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == list[i].cells[2].innerHTML))
@@ -238,7 +229,6 @@ function guideOptions() {
     }
 }
 
-// берем только уникальные языыки
 function getoptionforselect(q){
     return [... new Set(q)];    
 }
@@ -255,7 +245,6 @@ function removeOptions(selectElement) {
     selects.appendChild(option);
 }  
 
-// тут мы создаем селект с языками (заполняем option-ами внутренность селекта)
 function createselect(arr){
     const select = document.getElementById('select_language');
     for(let i in arr){
@@ -267,7 +256,6 @@ function createselect(arr){
     }  
 }
 
-// тут мы обрабатываем события нажатия на кнопку выбрать в таблице гидов 
 function clickHandler(event) {
     const screen = document.querySelector('.screen');
     const target = event.target;
@@ -286,7 +274,6 @@ function clickHandler(event) {
         getIDguide(idd);
     } 
 }
-//возвращаем id гида 
 function getIDguide(id){
     console.log(id)
     return id
@@ -300,4 +287,5 @@ window.onload = function() {
     document.getElementById('select_language').onchange = guideOptions;
     const table = document.querySelector('.table');
     table.addEventListener('click', clickHandler);
+    fetchRoutesFromApi();
 }
