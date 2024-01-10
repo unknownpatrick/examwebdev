@@ -102,6 +102,8 @@ async function addRoutesToTable(orders) {
         const editModal = document.querySelector('#editModal');
         const deleteModal = document.querySelector('#deleteModal');
 
+        row.insertCell(4).appendChild(buttons);
+
         buttons.classList.remove('d-none');
         buttons.querySelector('#viewOrderButton').addEventListener(
             'click',
@@ -141,7 +143,6 @@ async function addRoutesToTable(orders) {
                         fetchRoutesFromApi();
                     }
                 );
-                row.insertCell(4).appendChild(buttons);
             }
         );
     });
