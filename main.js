@@ -1,6 +1,7 @@
-'use strict'
+'use strict';
 
-const API_KEY = '619d919d-e099-4371-b800-7aa4e606d6df' // СЮДА СВОЙ АПИ КЕЙ 
+const HOST = 'http://exam-2023-1-api.std-900.ist.mospolytech.ru';
+const API_KEY = '619d919d-e099-4371-b800-7aa4e606d6df'; // СЮДА СВОЙ АПИ КЕЙ 
 
  
 let routesData;
@@ -8,35 +9,102 @@ let filteredRoutes;
   
 const itemsPerPage = 5;
 let currentPage = 1;
+
+
+function clearTable() {
+    const tableBody = document.getElementById('routesTableBody');
+    tableBody.innerHTML = '';
+}
+
+function addRoutesToTable(routes) {
+    const tableBody = document.getElementById('routesTableBody');
+  
+    routes.forEach(route => {
+        const row = tableBody.insertRow();
+        row.insertCell(0).innerHTML = route.name;
+        row.insertCell(1).innerHTML = route.description;
+        row.insertCell(2).innerHTML = route.mainObject;
+
+        const selectButton = document.createElement('button');
+        selectButton.innerText = 'Выбрать';
+        selectButton.addEventListener('click', () => guideDownload(route.id));
+        row.insertCell(3).appendChild(selectButton);
+    });
+}
+
+function guideDownload(id) {
+    let guideTable = document.querySelector('.guide-table');
+    let arroption = [];
+    fetch(`${HOST}/api/routes/${id}/guides?api_key=${API_KEY}`)
+        .then(response => response.json())
+        .then(response => {
+            arroption = [];
+        
+            removeOptions(document.getElementById('select_language'));
+            guideTable.innerHTML = '';
+            for (let i in response) {
+                console.log(i, 'id guid')
+                let row = document.createElement("tr");
+                row.innerHTML = `
+            <th scope="col" id = "${response[i].name}" name = "${i}"><img src="imgs/1.png"></th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].name}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].language}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].workExperience}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].pricePerHour}</th>
+            <th scope="col" id = "${response[i].name}" name = "${i}">
+            <button class = "rounded-3 choose" id = "${response[i].name}" name = "${i}">Выбрать</button></th> 
+            `; // в последнее значение класса, где кнопка, надо будет сунуть свое значение стиля))
+            if ((document.getElementById('guide-input-expfrom').value != '' &&
+            document.getElementById('guide-input-expfrom').value > response[i].workExperience) ||
+            (document.getElementById('guide-input-expto').value != '' &&
+            document.getElementById('guide-input-expto').value < response[i].workExperience) &&
+            document.getElementById('select_language').value == response[i].language) {
+                row.classList.add("d-none");
+            }
+            guideTable.append(row);
+            arroption.push(response[i].language);
+        }
+        console.log(arroption);
+        createselect(getoptionforselect(arroption));
+        });
+}
   
 function fetchRoutesFromApi() {
-    fetch(`http://exam-2023-1-api.std-900.ist.mospolytech.ru/api/routes?api_key=${API_KEY}`)
-      .then(response => response.json())
-      .then(data => {
-        routesData = data;
-        updateTable();
-      })
-      .catch(error => console.error('Error fetching route data:', error));
-  }
-  
+    fetch(
+        `${HOST}/api/routes?api_key=${API_KEY}`
+    )
+        .then(response => response.json())
+        .then(data => {
+            routesData = data;
+            updateTable();
+        })
+        .catch(error => console.error('Error fetching route data:', error));
+}
+
 function updateTable() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const currentRoutes = filteredRoutes ? filteredRoutes.slice(startIndex, endIndex) : routesData.slice(startIndex, endIndex);
+    const currentRoutes = filteredRoutes ?
+        filteredRoutes.slice(startIndex, endIndex) :
+        routesData.slice(startIndex, endIndex);
   
     clearTable();
     addRoutesToTable(currentRoutes);
     updatePagination();
     
-    const searchKeyword = document.getElementById('routeNameInput').value.toLowerCase();
+    const searchKeyword = document.getElementById('routeNameInput')
+        .value.toLowerCase();
+
     if (searchKeyword) {
-      highlightSearchResult(searchKeyword);
+        highlightSearchResult(searchKeyword);
     }
 }
   
 function searchRoutes() {
-    const searchKeyword = document.getElementById('routeNameInput').value.toLowerCase();
-    const selectedObject = document.getElementById('mainObjectSelect').value.toLowerCase();
+    const searchKeyword = document.getElementById('routeNameInput')
+        .value.toLowerCase();
+    const selectedObject = document.getElementById('mainObjectSelect')
+        .value.toLowerCase();
   
     filteredRoutes = routesData.filter(route => 
         route.name.toLowerCase().includes(searchKeyword) &&
@@ -57,31 +125,13 @@ function resetSearch() {
     filteredRoutes = null;
     updateTable();
 }
-  
-function clearTable() {
-    const tableBody = document.getElementById('routesTableBody');
-    tableBody.innerHTML = '';
-}
-  
-function addRoutesToTable(routes) {
-    const tableBody = document.getElementById('routesTableBody');
-  
-    routes.forEach(route => {
-      const row = tableBody.insertRow();
-      row.insertCell(0).innerHTML = route.name;
-      row.insertCell(1).innerHTML = route.description;
-      row.insertCell(2).innerHTML = route.mainObject;
-  
-      const selectButton = document.createElement('button');
-      selectButton.innerText = 'Выбрать';
-      selectButton.addEventListener('click', () => guideDownload(route.id));
-      row.insertCell(3).appendChild(selectButton);
-    });
-}
+
   
 function updatePagination() {
     const paginationElement = document.getElementById('pagination');
-    const totalPages = Math.ceil((filteredRoutes ? filteredRoutes.length : routesData.length) / itemsPerPage);
+    const totalPages = Math.ceil((filteredRoutes ?
+        filteredRoutes.length : 
+        routesData.length) / itemsPerPage);
   
     paginationElement.innerHTML = '';
   
@@ -106,18 +156,23 @@ function createPaginationItem(text, pageNumber) {
     pageLink.href = 'javascript:void(0)';
     pageLink.innerText = text;
   
-    if ((text === 'Previous' && currentPage === 1) || (text === 'Next' && currentPage === Math.ceil((filteredRoutes ? filteredRoutes.length : routesData.length) / itemsPerPage))) {
+    if (
+        (text === 'Previous' && currentPage === 1) ||
+        (text === 'Next' && 
+            currentPage === Math.ceil((filteredRoutes ? 
+                filteredRoutes.length : routesData.length) / itemsPerPage)
+        )) {
         pageItem.classList.add('disabled');
         pageLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        handlePageClick(pageNumber);
-      });
+            e.preventDefault();
+            handlePageClick(pageNumber);
+        });
     } else {
-      pageLink.addEventListener('click', () => handlePageClick(pageNumber));
+        pageLink.addEventListener('click', () => handlePageClick(pageNumber));
     }
-  
+ 
     if (pageNumber === currentPage) {
-      pageItem.classList.add('active');
+        pageItem.classList.add('active');
     }
   
     pageItem.appendChild(pageLink);
@@ -135,8 +190,8 @@ function updatePaginationAfterSearch(filteredRoutes) {
     paginationElement.appendChild(prevItem);
   
     for (let i = 1; i <= totalPages; i++) {
-      const pageItem = createPaginationItem(i, i);
-      paginationElement.appendChild(pageItem);
+        const pageItem = createPaginationItem(i, i);
+        paginationElement.appendChild(pageItem);
     }
   
     const nextItem = createPaginationItem('Next', currentPage + 1);
@@ -146,7 +201,7 @@ function updatePaginationAfterSearch(filteredRoutes) {
 function handlePageClick(pageNumber) {
     currentPage = pageNumber;
     updateTable();
-  }
+}
   
 function highlightSearchResult(searchKeyword) {
     const tableBody = document.getElementById('routesTableBody');
@@ -174,69 +229,36 @@ function highlightSearchResult(searchKeyword) {
     }
 }
 
-function guideDownload(id) {
-    let guideTable = document.querySelector('.guide-table');
-    let arroption = [];
-    fetch (`http://exam-2023-1-api.std-900.ist.mospolytech.ru/api/routes/${id}/guides?api_key=${API_KEY}`)
-        .then(response => response.json())
-        .then(response => {
-        arroption = [];
-        
-        removeOptions(document.getElementById('select_language'));
-        guideTable.innerHTML = '';
-        for (let i in response) {
-            console.log(i, 'id guid')
-            let row = document.createElement("tr");
-            row.innerHTML = `
-            <th scope="col" id = "${response[i].name}" name = "${i}"><img src="imgs/1.png"></th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].name}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].language}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].workExperience}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].pricePerHour}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">
-            <button class = "rounded-3 choose" id = "${response[i].name}" name = "${i}">Выбрать</button></th> 
-            `; // в последнее значение класса, где кнопка, надо будет сунуть свое значение стиля))
-            if ((document.getElementById('guide-input-expfrom').value != '' &&
-            document.getElementById('guide-input-expfrom').value > response[i].workExperience) ||
-            (document.getElementById('guide-input-expto').value != '' &&
-            document.getElementById('guide-input-expto').value < response[i].workExperience) &&
-            document.getElementById('select_language').value == response[i].language) {
-                row.classList.add("d-none");
-            }
-            guideTable.append(row);
-            arroption.push(response[i].language);
-        }
-        console.log(arroption);
-        createselect(getoptionforselect(arroption));
-        });
-}
-
 function guideOptions() {
     let list = document.querySelectorAll('.guide-table tr');
     let from = Number(document.getElementById('guide-input-expfrom').value);
     let to = Number(document.getElementById('guide-input-expto').value);
     for (let i in list) {
-      if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
+        if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
         (to == 0 || to >= list[i].cells[3].innerHTML) &&
-        (document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == 'Язык экскурсии' ||
-        document.getElementById('select_language').options[document.getElementById('select_language').selectedIndex].innerHTML == list[i].cells[2].innerHTML))
-        {
+        (document.getElementById('select_language')
+            .options[document.getElementById('select_language').selectedIndex]
+            .innerHTML == 'Язык экскурсии' ||
+        document.getElementById('select_language')
+            .options[document.getElementById('select_language').selectedIndex]
+            .innerHTML == list[i].cells[2].innerHTML)) {
+
             list[i].classList.remove("d-none");
-        }else{
+        } else {
             list[i].classList.add("d-none");
         }
         console.log(list[i].cells[2].innerHTML);
     }
 }
 
-function getoptionforselect(q){
+function getoptionforselect(q) {
     return [... new Set(q)];    
 }
 
 function removeOptions(selectElement) {
     let i, L = selectElement.options.length - 1;
-    for(i = L; i >= 0; i--) {
-       selectElement.remove(i);
+    for (i = L; i >= 0; i--) {
+        selectElement.remove(i);
     }
     const selects = document.getElementById('select_language');
     let option = document.createElement('option');
@@ -245,9 +267,9 @@ function removeOptions(selectElement) {
     selects.appendChild(option);
 }  
 
-function createselect(arr){
+function createselect(arr) {
     const select = document.getElementById('select_language');
-    for(let i in arr){
+    for (let i in arr) {
         console.log(arr[i]);
         let opt = document.createElement('option');
         opt.value = i;
@@ -260,32 +282,25 @@ function clickHandler(event) {
     const screen = document.querySelector('.screen');
     const target = event.target;
     const row = document.querySelectorAll('th');
-    let idd = 0;
+    let id = 0;
     if (target.classList.contains('choose')) {
-        for(let i = 6; i< row.length; i++){
-            if(target.id == row[i].id){
+        for (let i = 6; i < row.length; i++) {
+            if (target.id == row[i].id) {
                 row[i].classList.add('table-success');
-                idd = row[i].getAttribute('name')
-            }
-            else{
+                id = row[i].getAttribute('name');
+            } else {
                 row[i].classList.remove('table-success');
             }
-        }   
-        getIDguide(idd);
-    } 
-}
-function getIDguide(id){
-    console.log(id)
-    return id
+        }
+    }
 }
 
 
 window.onload = function() {
-    document.querySelector('.test').onclick = guideDownload;
     document.getElementById('guide-input-expfrom').oninput = guideOptions;
     document.getElementById('guide-input-expto').oninput = guideOptions;
     document.getElementById('select_language').onchange = guideOptions;
     const table = document.querySelector('.table');
     table.addEventListener('click', clickHandler);
     fetchRoutesFromApi();
-}
+};
