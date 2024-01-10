@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   <title>ORGNAME</title>
 </head>
@@ -80,6 +81,10 @@
           <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Suscipit accusamus omnis labore. Earum magnam maxime cum, nihil cumque odio asperiores molestias consectetur blanditiis reiciendis mollitia dolor reprehenderit culpa aperiam accusantium?</p>
         </div>
       </div>
+    </section>
+    <section class="container py-2 text-center gx-2">
+      <h2>Карта</h2>
+      <div class="w-100 mainMap" id="mainMap"></div> 
     </section>
     <section id='routes' class="container mt-3">
       <h3>Доступные маршруты</h3> 
@@ -246,5 +251,18 @@
   </div>
   <script src="./main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://mapgl.2gis.com/api/js/v1"></script>
+
+  <script>
+    const map = new mapgl.Map('mainMap', {
+      center: [37.6156,	55.7522],
+      zoom: 13,
+      key: '0450e79e-4ef9-4dd5-a04b-269f4e8d15e6',
+    });
+
+    const marker = new mapgl.Marker(map, {
+      coordinates: [37.6156, 55.7522],
+    });
+  </script>
 </body>
 </html>
