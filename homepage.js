@@ -70,7 +70,6 @@ function fetchRoutesFromApi() {
         .then(response => response.json())
         .then(data => {
             routesData = data;
-            console.log(routesData)
             updateTable();
         })
         .catch(error => console.error('Error fetching route data:', error));
@@ -112,37 +111,70 @@ async function addRoutesToTable(orders) {
                 viewModal.querySelector('#guideFullName').value = guide.name;
                 viewModal.querySelector('#orderDate').value = order.date;
                 viewModal.querySelector('#startTime').value = order.time;
-                viewModal.querySelector('#orderDuration'
-                ).value = order.duration;
+                viewModal.querySelector('#orderDuration').value = order.duration;
+                viewModal.querySelector('#personsCount').value = order.persons;
                 viewModal.querySelector('#price'
                 ).textContent = order.price + ' руб.';
             },
         );
         buttons.querySelector('#editOrderButton').addEventListener(
-            'show.bs.modal',
-            () => {
-                viewModal.querySelector('#routeName').value = data.name;
+            'click',
+            () => { 
+                const dateField = editModal.querySelector('#orderDate');
+                const timeField = editModal.querySelector('#startTime');
+                const durationField = editModal.querySelector('#orderDuration');
+                const personsField = editModal.querySelector('#personsCount');
+                const priceField = editModal.querySelector('#price');
+
+                editModal.querySelector('#routeName').value = route.name;
+                editModal.querySelector('#guideFullName').value = guide.name;
+                dateField.value = order.date;
+                timeField.value = order.time;
+                durationField.value = order.duration;
+                priceField.textContent = order.price + ' руб.';
+                editModal.querySelector('#sendData').onclick = async () => {
+                    const formData = new FormData();
+
+                    formData.append("id", order.id);
+                    formData.append("date", dateField.value);
+                    formData.append("time", timeField.value);
+                    formData.append("duration", durationField.value);
+                    formData.append("persons", personsField.value);
+                    formData.append("price", order.price); // TODO: make function to calculate
+
+                    console.log(formData)
+
+                    const requestOptions = {
+                        method: 'PUT',
+                        body: formData,
+                        redirect: 'follow'
+                    };
+
+                    const guide = await fetch(
+                        `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
+                        requestOptions
+                    ).then(response => response.json()); 
+
+                    fetchRoutesFromApi();
+                };
             },
         );
         buttons.querySelector('#deleteOrderButton').addEventListener(
             'click',
             () => {
-                deleteModal.querySelector('deleteButton').addEventListener(
-                    async () => {
-                        const requestOptions = {
-                            method: 'DELETE',
-                            body: formData,
-                            redirect: 'follow'
-                        };
+                deleteModal.onclick = async () => {
+                    const requestOptions = {
+                        method: 'DELETE',
+                        redirect: 'follow'
+                    };
 
-                        const guide = await fetch(
-                            `${HOST}/api/orders/${order.guide_id}?api_key=${API_KEY}`,
-                            requestOptions
-                        ).then(response => response.json()); 
+                    const guide = await fetch(
+                        `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
+                        requestOptions
+                    ).then(response => response.json()); 
 
-                        fetchRoutesFromApi();
-                    }
-                );
+                    fetchRoutesFromApi();
+                };
             }
         );
     });
@@ -254,7 +286,6 @@ function guideOptions() {
         } else {
             list[i].classList.add("d-none");
         }
-        console.log(list[i].cells[2].innerHTML);
     }
 }
 
