@@ -1,7 +1,24 @@
 'use strict';
 
 const HOST = 'http://exam-2023-1-api.std-900.ist.mospolytech.ru';
-const API_KEY = '619d919d-e099-4371-b800-7aa4e606d6df'; // СЮДА СВОЙ АПИ КЕЙ 
+const API_KEY = '619d919d-e099-4371-b800-7aa4e606d6df';
+
+const HOLIDAYS = [
+    "1-1", // 1 января
+    "1-2", // 2 января
+    "1-3", // 3 января
+    "1-4", // 4 января
+    "1-5", // 5 января
+    "1-6", // 6 января
+    "1-7", // 7 января
+    "1-8", // 8 января
+    "2-23", // 23 февраля
+    "3-8", // 8 марта
+    "5-1", // 1 мая
+    "5-9", // 9 мая
+    "6-12", // 12 июня
+    "11-4", // 4 ноября
+];
 
 let routesData;
 let filteredRoutes;
@@ -9,8 +26,83 @@ let filteredRoutes;
 const itemsPerPage = 5;
 let currentPage = 1;
 
-function getRoute(id) {
- 
+const orderModal = document.getElementById('editModal');
+
+const dateField = orderModal.querySelector('#orderDate');
+const timeField = orderModal.querySelector('#startTime');
+const durationField = orderModal.querySelector('#orderDuration');
+const personsField = orderModal.querySelector('#personsCount');
+const priceField = orderModal.querySelector('#price');
+
+const studentField = orderModal.querySelector('#isStudent');
+const extraField = orderModal.querySelector('#isExtra');
+
+
+function isThisDayOff(dateString) {
+    let date = new Date(dateString);
+    let day = date.getDay();
+    let MonthDay = (date.getMonth() + 1) + '-' + date.getDate();
+
+    if (day === 0 || day === 6 || HOLIDAYS.includes(MonthDay)) {
+        return 1.5; 
+    }
+
+    return 1;
+}
+
+function getTimeExtra(startTime) {
+    let time = startTime.split(":");
+    let hours = parseInt(time[0]); 
+
+    if (hours <= 12) {        
+        return 400;
+    } else if (hours >= 20) { 
+        return 1000;
+    }
+
+    return 0;
+}
+
+function calculateCost(guideCost, duration, 
+    date, startTime, 
+    personsNumber, students, extra
+) {
+    let price = guideCost * duration * isThisDayOff(date);
+    price += personsNumber > 5 && personsNumber <= 10 ? 1000 : 0;
+    price += personsNumber > 10 && personsNumber <= 20 ? 1500 : 0;
+    price += extra ? personsNumber * 500 : 0;
+    price *= students ? 0.85 : 1;
+
+    return Math.floor(price);
+}
+
+function calculateOrderCost() {
+    const date = dateField.value;
+    const time = timeField.value;
+    const duration = durationField.value;
+    const persons = personsField.value;
+                     
+    const student = studentField.checked;
+    const extra = extraField.checked;
+
+    const cost = calculateCost(orderModal.guide.pricePerHour, duration, date,
+        time, persons, student, extra);
+
+    priceField.textContent = cost + ' руб.';
+                                  
+    return cost;
+}
+
+function fetchOrdersFromApi() {
+    fetch(
+        `${HOST}/api/orders?api_key=${API_KEY}`
+    )
+        .then(response => response.json())
+        .then(data => {
+            routesData = data;
+            updateTable();
+        })
+        .catch(error => console.error('Error fetching route data:', error));
 }
 
 function clearTable() {
@@ -18,16 +110,123 @@ function clearTable() {
     tableBody.innerHTML = '';
 }
 
-function updateTable() {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentRoutes = filteredRoutes ?
-        filteredRoutes.slice(startIndex, endIndex) :
-        routesData.slice(startIndex, endIndex);
+function handlePageClick(pageNumber) {
+    currentPage = pageNumber;
+    updateTable();
+}
+
+function updateModal(order, route, guide) {
+    orderModal.guide = guide;
+
+    const dateField = editModal.querySelector('#orderDate');
+    const timeField = editModal.querySelector('#startTime');
+    const durationField = editModal.querySelector('#orderDuration');
+    const personsField = editModal.querySelector('#personsCount');
+    const priceField = editModal.querySelector('#price');
+
+    editModal.querySelector('#routeName').value = route.name;
+    editModal.querySelector('#guideFullName').value = guide.name;
+    dateField.value = order.date;
+    timeField.value = order.time;
+    durationField.value = order.duration;
+    priceField.textContent = order.price + ' руб.';
+    editModal.querySelector('#sendData').onclick = async () => {
+        const formData = new FormData();
+
+        formData.append("id", order.id);
+        formData.append("date", dateField.value);
+        formData.append("time", timeField.value);
+        formData.append("duration", durationField.value);
+        formData.append("persons", personsField.value);
+        formData.append("price", calculateOrderCost());
+
+        console.log(formData)
+
+        const requestOptions = {
+            method: 'PUT',
+            body: formData,
+            redirect: 'follow'
+        };
+
+        const guide = await fetch(
+            `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
+            requestOptions
+        ).then(response => response.json()); 
+
+        fetchOrdersFromApi();
+    };
+}
+
+async function addRoutesToTable(orders) {
+    const tableBody = document.getElementById('ordersTable');
   
-    clearTable();
-    addRoutesToTable(currentRoutes);
-    updatePagination();
+    orders.forEach(async (order) => {
+        const route = await fetch(
+            `${HOST}/api/routes/${order.route_id}?api_key=${API_KEY}`
+        ).then(response => response.json());
+
+        const guide = await fetch(
+            `${HOST}/api/guides/${order.guide_id}?api_key=${API_KEY}`
+        ).then(response => response.json());
+
+        const row = tableBody.insertRow();
+        row.insertCell(0).innerHTML = order.id;
+        row.insertCell(1).innerHTML = route.name;
+        row.insertCell(2).innerHTML = order.date;
+        row.insertCell(3).innerHTML = order.price;
+
+        const buttons = document.getElementById('orderButtons')
+            .cloneNode(true);
+
+        const viewModal = document.querySelector('#viewModal');
+        const editModal = document.querySelector('#editModal');
+        const deleteModal = document.querySelector('#deleteModal');
+
+        row.insertCell(4).appendChild(buttons);
+
+        buttons.classList.remove('d-none');
+        buttons.querySelector('#viewOrderButton').addEventListener(
+            'click',
+            () => {
+                viewModal.querySelector('#routeName').value = route.name;
+                viewModal.querySelector('#guideFullName').value = guide.name;
+                viewModal.querySelector('#orderDate').value = order.date;
+                viewModal.querySelector('#startTime').value = order.time;
+                viewModal.querySelector(
+                    '#orderDuration'
+                ).value = order.duration;
+                viewModal.querySelector('#personsCount').value = order.persons;
+
+                viewModal.querySelector(
+                    '#personsCount'
+                ).textContent = order.price + ' руб.';
+            },
+        );
+        buttons.querySelector('#editOrderButton').addEventListener(
+            'click',
+            () => { 
+                updateModal(order, route, guide);
+            },
+        );
+        buttons.querySelector('#deleteOrderButton').addEventListener(
+            'click',
+            () => {
+                deleteModal.onclick = async () => {
+                    const requestOptions = {
+                        method: 'DELETE',
+                        redirect: 'follow'
+                    };
+
+                    const guide = await fetch(
+                        `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
+                        requestOptions
+                    ).then(response => response.json()); 
+
+                    fetchOrdersFromApi();
+                };
+            }
+        );
+    });
 }
 
 function createPaginationItem(text, pageNumber) {
@@ -63,141 +262,6 @@ function createPaginationItem(text, pageNumber) {
     return pageItem;
 }
 
-function fetchRoutesFromApi() {
-    fetch(
-        `${HOST}/api/orders?api_key=${API_KEY}`
-    )
-        .then(response => response.json())
-        .then(data => {
-            routesData = data;
-            updateTable();
-        })
-        .catch(error => console.error('Error fetching route data:', error));
-}
-
-async function addRoutesToTable(orders) {
-    const tableBody = document.getElementById('ordersTable');
-  
-    orders.forEach(async (order) => {
-        const route = await fetch(
-            `${HOST}/api/routes/${order.route_id}?api_key=${API_KEY}`
-        ).then(response => response.json());
-
-        const guide = await fetch(
-            `${HOST}/api/guides/${order.guide_id}?api_key=${API_KEY}`
-        ).then(response => response.json());
-
-        const row = tableBody.insertRow();
-        row.insertCell(0).innerHTML = order.id;
-        row.insertCell(1).innerHTML = route.name;
-        row.insertCell(2).innerHTML = order.date;
-        row.insertCell(3).innerHTML = order.price;
-
-        const buttons = document.getElementById('orderButtons')
-            .cloneNode(true);
-
-
-        const viewModal = document.querySelector('#viewModal');
-        const editModal = document.querySelector('#editModal');
-        const deleteModal = document.querySelector('#deleteModal');
-
-        row.insertCell(4).appendChild(buttons);
-
-        buttons.classList.remove('d-none');
-        buttons.querySelector('#viewOrderButton').addEventListener(
-            'click',
-            () => {
-                viewModal.querySelector('#routeName').value = route.name;
-                viewModal.querySelector('#guideFullName').value = guide.name;
-                viewModal.querySelector('#orderDate').value = order.date;
-                viewModal.querySelector('#startTime').value = order.time;
-                viewModal.querySelector('#orderDuration').value = order.duration;
-                viewModal.querySelector('#personsCount').value = order.persons;
-                viewModal.querySelector('#price'
-                ).textContent = order.price + ' руб.';
-            },
-        );
-        buttons.querySelector('#editOrderButton').addEventListener(
-            'click',
-            () => { 
-                const dateField = editModal.querySelector('#orderDate');
-                const timeField = editModal.querySelector('#startTime');
-                const durationField = editModal.querySelector('#orderDuration');
-                const personsField = editModal.querySelector('#personsCount');
-                const priceField = editModal.querySelector('#price');
-
-                editModal.querySelector('#routeName').value = route.name;
-                editModal.querySelector('#guideFullName').value = guide.name;
-                dateField.value = order.date;
-                timeField.value = order.time;
-                durationField.value = order.duration;
-                priceField.textContent = order.price + ' руб.';
-                editModal.querySelector('#sendData').onclick = async () => {
-                    const formData = new FormData();
-
-                    formData.append("id", order.id);
-                    formData.append("date", dateField.value);
-                    formData.append("time", timeField.value);
-                    formData.append("duration", durationField.value);
-                    formData.append("persons", personsField.value);
-                    formData.append("price", order.price); // TODO: make function to calculate
-
-                    console.log(formData)
-
-                    const requestOptions = {
-                        method: 'PUT',
-                        body: formData,
-                        redirect: 'follow'
-                    };
-
-                    const guide = await fetch(
-                        `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
-                        requestOptions
-                    ).then(response => response.json()); 
-
-                    fetchRoutesFromApi();
-                };
-            },
-        );
-        buttons.querySelector('#deleteOrderButton').addEventListener(
-            'click',
-            () => {
-                deleteModal.onclick = async () => {
-                    const requestOptions = {
-                        method: 'DELETE',
-                        redirect: 'follow'
-                    };
-
-                    const guide = await fetch(
-                        `${HOST}/api/orders/${order.id}?api_key=${API_KEY}`,
-                        requestOptions
-                    ).then(response => response.json()); 
-
-                    fetchRoutesFromApi();
-                };
-            }
-        );
-    });
-}
-
-function searchRoutes() { 
-    filteredRoutes = routesData;
- 
-    const limitedRoutes = filteredRoutes.slice(0, itemsPerPage);
-  
-    clearTable();
-    addRoutesToTable(limitedRoutes);
-    updatePaginationAfterSearch(filteredRoutes);
-    highlightSearchResult(searchKeyword);
-}
-  
-function resetSearch() { document.getElementById('routeNameInput').value = '';
-    document.getElementById('mainObjectSelect').value = '';
-    filteredRoutes = null;
-    updateTable();
-}
-
-  
 function updatePagination() {
     const paginationElement = document.getElementById('pagination');
     const totalPages = Math.ceil((filteredRoutes ? filteredRoutes.length :
@@ -216,7 +280,19 @@ function updatePagination() {
     const nextItem = createPaginationItem('Следующий', currentPage + 1);
     paginationElement.appendChild(nextItem);
 }
+
+function updateTable() {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentRoutes = filteredRoutes ?
+        filteredRoutes.slice(startIndex, endIndex) :
+        routesData.slice(startIndex, endIndex);
   
+    clearTable();
+    addRoutesToTable(currentRoutes);
+    updatePagination();
+}
+
 function updatePaginationAfterSearch(filteredRoutes) {
     const paginationElement = document.getElementById('pagination');
     const totalPages = Math.ceil(filteredRoutes.length / itemsPerPage);
@@ -234,12 +310,7 @@ function updatePaginationAfterSearch(filteredRoutes) {
     const nextItem = createPaginationItem('Следующий', currentPage + 1);
     paginationElement.appendChild(nextItem);
 }
-  
-function handlePageClick(pageNumber) {
-    currentPage = pageNumber;
-    updateTable();
-}
-  
+
 function highlightSearchResult(searchKeyword) {
     const tableBody = document.getElementById('ordersTable');
     const rows = tableBody.getElementsByTagName('tr');
@@ -268,6 +339,24 @@ function highlightSearchResult(searchKeyword) {
     }
 }
 
+function searchRoutes() { 
+    filteredRoutes = routesData;
+ 
+    const limitedRoutes = filteredRoutes.slice(0, itemsPerPage);
+  
+    clearTable();
+    addRoutesToTable(limitedRoutes);
+    updatePaginationAfterSearch(filteredRoutes);
+    highlightSearchResult(searchKeyword);
+}
+  
+function resetSearch() {
+    document.getElementById('routeNameInput').value = '';
+    document.getElementById('mainObjectSelect').value = '';
+    filteredRoutes = null;
+    updateTable();
+}
+
 function guideOptions() {
     let list = document.querySelectorAll('.guide-table tr');
     let from = Number(document.getElementById('guide-input-expfrom').value);
@@ -282,9 +371,9 @@ function guideOptions() {
             .options[document.getElementById('select_language').selectedIndex]
             .innerHTML == list[i].cells[2].innerHTML)) {
 
-            list[i].classList.remove("d-none");
+            list[i].classList.remove('d-none');
         } else {
-            list[i].classList.add("d-none");
+            list[i].classList.add('d-none');
         }
     }
 }
@@ -300,8 +389,8 @@ function removeOptions(selectElement) {
     }
     const selects = document.getElementById('select_language');
     let option = document.createElement('option');
-    option.value = "";
-    option.innerHTML = "Язык экскурсии";
+    option.value = '';
+    option.innerHTML = 'Язык экскурсии';
     selects.appendChild(option);
 }  
 
@@ -323,5 +412,13 @@ function clickHandler(event) {
 }
 
 window.onload = function() {
-    fetchRoutesFromApi();
+    dateField.addEventListener('change', calculateOrderCost);
+    timeField.addEventListener('change', calculateOrderCost); 
+    durationField.addEventListener('change', calculateOrderCost);
+    personsField.addEventListener('change', calculateOrderCost);
+    priceField.addEventListener('change', calculateOrderCost); 
+    studentField.addEventListener('change', calculateOrderCost);
+    extraField.addEventListener('change', calculateOrderCost);
+
+    fetchOrdersFromApi();
 };

@@ -38,7 +38,7 @@ const priceField = orderModal.querySelector('#price');
 const studentField = orderModal.querySelector('#isStudent');
 const extraField = orderModal.querySelector('#isExtra');
 
-function clearTable() {
+function clearRoutesTable() {
     document.getElementById('routesTableBody').innerHTML = '';
 }
 
@@ -116,7 +116,6 @@ function calculateOrderCost() {
 }
 
 function setModalWindow(route, guide) {
-    console.log('setting modal')
     orderModal.guide = guide;
 
     orderModal.querySelector('#routeName').value = route.name;
@@ -160,16 +159,24 @@ function getoptionforselect(q) {
     return [... new Set(q)];    
 }
 
-function removeOptions(selectElement) {
-    let i, L = selectElement.options.length - 1;
-    for (i = L; i >= 0; i--) {
-        selectElement.remove(i);
-    }
-    const selects = document.getElementById('selectedLanguge');
-    let option = document.createElement('option');
+function clearLanguageOptions(selectElement) {
+    const select = document.getElementById('selectedLanguge');
+    select.innerHTML = '';
+
+    const option = document.createElement('option');
     option.value = "";
     option.innerHTML = "Язык экскурсии";
     selects.appendChild(option);
+}
+
+function updateLanguageSelect(languages) {
+    const select = document.getElementById('selectedLanguge');
+    for (let i in languages) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.innerHTML = languages[i];
+        select.appendChild(option);
+    }  
 }
 
 function guideDownload(route) {
@@ -228,7 +235,7 @@ function guideDownload(route) {
                 guideTable.append(row);
                 arroption.push(item.language);
             } 
-            createselect(getoptionforselect(arroption));
+            updateLanguageSelect(getoptionforselect(arroption));
         });
 }
   
@@ -263,6 +270,111 @@ function updateTable() {
     }
 }
   
+function handlePageClick(pageNumber) {
+    currentPage = pageNumber;
+    updateTable();
+}
+
+function createPaginationItem(text, pageNumber) {
+    const pageItem = document.createElement('li');
+    pageItem.className = 'page-item';
+  
+    const pageLink = document.createElement('a');
+    pageLink.className = 'page-link';
+    pageLink.href = 'javascript:void(0)';
+    pageLink.innerText = text;
+  
+    if (
+        (text === 'Предыдущий' && currentPage === 1) ||
+        (text === 'Следующий' && 
+            currentPage === Math.ceil((filteredRoutes ? 
+                filteredRoutes.length : routesData.length) / itemsPerPage)
+        )) {
+        pageItem.classList.add('disabled');
+        pageLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            handlePageClick(pageNumber);
+        });
+    } else {
+        pageLink.addEventListener('click', () => handlePageClick(pageNumber));
+    }
+ 
+    if (pageNumber === currentPage) {
+        pageItem.classList.add('active');
+    }
+  
+    pageItem.appendChild(pageLink);
+  
+    return pageItem;
+}
+
+function updatePaginationAfterSearch(filteredRoutes) {
+    const paginationElement = document.getElementById('pagination');
+    const totalPages = Math.ceil(filteredRoutes.length / itemsPerPage);
+  
+    paginationElement.innerHTML = '';
+  
+    const prevItem = createPaginationItem('Previous', currentPage - 1);
+    paginationElement.appendChild(prevItem);
+  
+    for (let i = 1; i <= totalPages; i++) {
+        const pageItem = createPaginationItem(i, i);
+        paginationElement.appendChild(pageItem);
+    }
+  
+    const nextItem = createPaginationItem('Next', currentPage + 1);
+    paginationElement.appendChild(nextItem);
+}
+  
+function updatePagination() {
+    const paginationElement = document.getElementById('pagination');
+    const totalPages = Math.ceil((filteredRoutes ?
+        filteredRoutes.length : 
+        routesData.length) / itemsPerPage);
+  
+    paginationElement.innerHTML = '';
+  
+    const prevItem = createPaginationItem('Previous', currentPage - 1);
+    paginationElement.appendChild(prevItem);
+  
+    for (let i = 1; i <= totalPages; i++) {
+        const pageItem = createPaginationItem(i, i);
+        paginationElement.appendChild(pageItem);
+    }
+  
+    const nextItem = createPaginationItem('Next', currentPage + 1);
+    paginationElement.appendChild(nextItem);
+}  
+
+function highlightSearchResult(searchKeyword) {
+    const tableBody = document.getElementById('routesTableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+  
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        const nameCell = cells[0];
+
+        const cellValue = nameCell.innerText;
+
+        const lowerCaseCellValue = cellValue.toLowerCase();
+        const lowerCaseSearchKeyword = searchKeyword.toLowerCase();
+  
+        if (lowerCaseCellValue.includes(lowerCaseSearchKeyword)) {
+            const startIndex = lowerCaseCellValue.indexOf(
+                lowerCaseSearchKeyword
+            );
+
+            const endIndex = startIndex + searchKeyword.length;
+  
+            const highlightedText = cellValue.substring(0, startIndex) +
+          `<span class="search-highlight">${cellValue.substring(startIndex, endIndex)}</span>` +
+            cellValue.substring(endIndex);
+  
+            nameCell.innerHTML = highlightedText;
+        }
+    }
+}
+
 function searchRoutes() {
     const searchKeyword = document.getElementById('routeNameInput')
         .value.toLowerCase();
@@ -289,109 +401,6 @@ function resetSearch() {
     updateTable();
 }
 
-  
-function updatePagination() {
-    const paginationElement = document.getElementById('pagination');
-    const totalPages = Math.ceil((filteredRoutes ?
-        filteredRoutes.length : 
-        routesData.length) / itemsPerPage);
-  
-    paginationElement.innerHTML = '';
-  
-    const prevItem = createPaginationItem('Previous', currentPage - 1);
-    paginationElement.appendChild(prevItem);
-  
-    for (let i = 1; i <= totalPages; i++) {
-      const pageItem = createPaginationItem(i, i);
-      paginationElement.appendChild(pageItem);
-    }
-  
-    const nextItem = createPaginationItem('Next', currentPage + 1);
-    paginationElement.appendChild(nextItem);
-}
-  
-function createPaginationItem(text, pageNumber) {
-    const pageItem = document.createElement('li');
-    pageItem.className = 'page-item';
-  
-    const pageLink = document.createElement('a');
-    pageLink.className = 'page-link';
-    pageLink.href = 'javascript:void(0)';
-    pageLink.innerText = text;
-  
-    if (
-        (text === 'Previous' && currentPage === 1) ||
-        (text === 'Next' && 
-            currentPage === Math.ceil((filteredRoutes ? 
-                filteredRoutes.length : routesData.length) / itemsPerPage)
-        )) {
-        pageItem.classList.add('disabled');
-        pageLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            handlePageClick(pageNumber);
-        });
-    } else {
-        pageLink.addEventListener('click', () => handlePageClick(pageNumber));
-    }
- 
-    if (pageNumber === currentPage) {
-        pageItem.classList.add('active');
-    }
-  
-    pageItem.appendChild(pageLink);
-  
-    return pageItem;
-}
-  
-function updatePaginationAfterSearch(filteredRoutes) {
-    const paginationElement = document.getElementById('pagination');
-    const totalPages = Math.ceil(filteredRoutes.length / itemsPerPage);
-  
-    paginationElement.innerHTML = '';
-  
-    const prevItem = createPaginationItem('Previous', currentPage - 1);
-    paginationElement.appendChild(prevItem);
-  
-    for (let i = 1; i <= totalPages; i++) {
-        const pageItem = createPaginationItem(i, i);
-        paginationElement.appendChild(pageItem);
-    }
-  
-    const nextItem = createPaginationItem('Next', currentPage + 1);
-    paginationElement.appendChild(nextItem);
-}
-  
-function handlePageClick(pageNumber) {
-    currentPage = pageNumber;
-    updateTable();
-}
-  
-function highlightSearchResult(searchKeyword) {
-    const tableBody = document.getElementById('routesTableBody');
-    const rows = tableBody.getElementsByTagName('tr');
-  
-    for (let i = 0; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
-        const nameCell = cells[0];
-
-        const cellValue = nameCell.innerText;
-
-        const lowerCaseCellValue = cellValue.toLowerCase();
-        const lowerCaseSearchKeyword = searchKeyword.toLowerCase();
-  
-        if (lowerCaseCellValue.includes(lowerCaseSearchKeyword)) {
-            const startIndex = lowerCaseCellValue.indexOf(lowerCaseSearchKeyword);
-            const endIndex = startIndex + searchKeyword.length;
-  
-            const highlightedText = cellValue.substring(0, startIndex) +
-          `<span class="search-highlight">${cellValue.substring(startIndex, endIndex)}</span>` +
-            cellValue.substring(endIndex);
-  
-            nameCell.innerHTML = highlightedText;
-        }
-    }
-}
-
 function guideOptions() {
     let list = document.querySelectorAll('#guideTable tr');
     let from = Number(document.getElementById('guideFromExperiense').value);
@@ -415,16 +424,6 @@ function guideOptions() {
     }
 }
 
-function createselect(arr) {
-    const select = document.getElementById('selectedLanguge');
-    for (let i in arr) {
-        let opt = document.createElement('option');
-        opt.value = i;
-        opt.innerHTML = arr[i];
-        select.appendChild(opt);
-    }  
-}
-
 function clickHandler(event) {
     const screen = document.querySelector('.screen');
     const target = event.target;
@@ -443,13 +442,6 @@ function clickHandler(event) {
 }
 
 window.onload = function() {
-    document.getElementById('guideFromExperiense').oninput = guideOptions;
-    document.getElementById('guideToExperiense').oninput = guideOptions;
-    document.getElementById('selectedLanguge').onchange = guideOptions;
-    const table = document.querySelector('.table');
-    table.addEventListener('click', clickHandler);
-    fetchRoutesFromApi();
-
     dateField.addEventListener('change', calculateOrderCost);
     timeField.addEventListener('change', calculateOrderCost); 
     durationField.addEventListener('change', calculateOrderCost);
@@ -457,4 +449,11 @@ window.onload = function() {
     priceField.addEventListener('change', calculateOrderCost); 
     studentField.addEventListener('change', calculateOrderCost);
     extraField.addEventListener('change', calculateOrderCost);
+
+    document.getElementById('guideFromExperiense').oninput = guideOptions;
+    document.getElementById('guideToExperiense').oninput = guideOptions;
+    document.getElementById('selectedLanguge').onchange = guideOptions;
+    const table = document.querySelector('.table');
+    table.addEventListener('click', clickHandler);
+    fetchRoutesFromApi();
 };
