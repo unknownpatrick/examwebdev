@@ -126,14 +126,14 @@
         </div>
         <div class="row">
             <div class="col-6 col-lg-4">
-                <select name="guide-lang" id = "select_language">
+                <select name="guide-lang" id="selectedLanguge">
                     <option value="">Язык экскурсии</option>
                 </select>
             </div>
             <div class="col-6 col-lg-4">
                 Опыт работы:
-                <input type="number" id="guide-input-expfrom" placeholder="от" class="w-25">
-                <input type="number" id="guide-input-expto" placeholder="до" class="w-25">
+                <input type="number" id="guideFromExperiense" placeholder="от" class="w-25">
+                <input type="number" id="guideToExperiense" placeholder="до" class="w-25">
             </div>
         </div>
         <table class="table table-bordered mt-3">
@@ -147,108 +147,116 @@
               <th scope="col">Выбрать</th>
             </tr>
           </thead>
-          <tbody class="guide-table <!--secondary color-->"></tbody>
+          <tbody id="guideTable" class="<!--secondary color-->"></tbody>
         </table>
     </section>
   </main>
   <footer class="py-5 text-center bg-black">
     Васильев Кирилл Александрович 221-365
   </footer>
-  <div class="modal" tabindex="-1" role="dialog" id="requestModal">
-    <div class="modal-dialog" role="document">
+  <div id="orderModal" class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-        <h5 class="modal-title">Оформление заявки</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form>
-          <div class="form-group">
-            <label for="routeName">Название маршрута:</label>
-            <input type="text" class="form-control" id="routeName" readonly>
-          </div>
-          <div class="form-group">
-            <label for="guideName">ФИО гида:</label>
-            <input type="text" class="form-control" id="guideName" readonly>
-          </div>
-          <div class="form-group">
-            <label for="excursionDate">Дата экскурсии:</label>
-            <input type="date" class="form-control" id="excursionDate" min="2024-01-01">
-          </div>
-          <div class="form-group">
-            <label for="excursionTime">Время начала экскурсии:</label>
-            <input type="time" class="form-control" id="excursionTime" min="09:00" max="23:00" step="1800">
-          </div>
-          <div class="form-group">
-            <label for="excursionDuration">Длительность экскурсии:</label>
-            <select class="form-control" id="excursionDuration">
-              <option value="1">1 час</option>
-              <option value="2">2 часа</option>
-              <option value="3">3 часа</option>
-            </select>
-            </div>
-            <div class="form-group">
-              <label for="groupSize">Количество человек в группе:</label>
-              <input type="number" class="form-control" id="groupSize" min="1" max="20">
-            </div>
-            <div class="form-group">
-              <label>Дополнительные опции заказа:</label>
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="additionalOption1">
-                <label class="form-check-label" for="additionalOption1">Скидка 25% пенсионерам</label>
-              </div>
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="additionalOption2">
-                <label class="form-check-label" for="additionalOption2"> Тематические сувениры для посетителей. Стоимость +500руб с каждого человка</label>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="totalCost">Итоговая стоимость:</label>
-              <input type="text" class="form-control" id="totalCost" readonly>
-            </div>
-            <button type="submit" class="btn">Отправить</button>
-            <button type="button" class="btn">Отмена</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="deleteModalLabel">Удалить заявку</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          <h1 class="modal-title fs-5" id="showModalLabel">Редактирование</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>Вы уверены, что хотите удалить заявку?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button type="button" class="btn btn-danger">Удалить</button>
+          <div class="row mb-3">
+              <div class="col-3">
+                <label for="guideFullName" class="form-label">ФИО гида:</label>
+              </div>
+              <div class="col-9">
+                <input type="text" class="form-control" id="guideFullName" readonly>
+              </div>
+            </div>
+            <div class="row mb-3">
+            <div class="col-3">
+                <label for="routeName" class="form-label">Название маршрута:</label>
+              </div>
+              <div class="col-9">
+                <input type="text" class="form-control" id="routeName" readonly>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-3">
+                <label for="orderDate" class="form-label">Дата экскурсии:</label>
+              </div>
+              <div class="col-9">
+                <input type="date" class="form-control" id="orderDate" min="2024-01-01" >
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-3">
+                <label for="startTime" class="form-label">Время начала:</label>
+              </div>
+              <div class="col-9">
+                <input type="time" class="form-control" id="startTime" min="09:00" max="23:00" step="1800" >
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-3">
+                <label for="orderDuration" class="form-label">Длительность экскурсии:</label>
+              </div>
+              <div class="col-9">
+                <select class="form-control" id="orderDuration" >
+                  <option value="1">1 час</option>
+                  <option value="2">2 часа</option>
+                  <option value="3">3 часа</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-3">
+                <label for="personsCount" class="form-label">Количество человек в группе:</label>
+              </div>
+              <div class="col-9">
+                <input type="number" class="form-control" id="personsCount" min="1" max="20">
+              </div>
+            </div>
+            <div id='additionsBlock'>
+              <h2>Дополнительные опции:</h2>
+              <div class="row mb-3">
+                <div class="col-1">
+                  <input id="isStudent" type="checkbox" />
+                </div>
+                <div class="col-11">
+                  <label for="isStudent" class="form-label">
+                    <strong>Скидка для школьников и студентов</strong>
+                    <p>Скидка предоставляется только для школьников и студентов. Не забудьте взять удостоверения подтверждающие статус.</p>
+                    <p class='text-danger'>-15 %</p>
+                  </label>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-1">
+                  <input id="isExtra" type="checkbox" />
+                </div>
+                <div class="col-11">
+                  <label for="isExtra"class="form-label">
+                    <strong>Тематические сувениры для посетителей</strong>
+                    <p>Стоимость увеличивается на 500 рублей для каждого посетителя.</p>
+                    <p class='text-danger' id='priceInput'></p>
+                  </label>
+                </div>
+              </div>
+            <div class="row mb-3">
+              <div class="col-5">
+                <label for="orderDuration" class="form-label">Итоговая стоимость:</label>
+              </div>
+              <div class="col-7">
+                <strong id='price'>Невозможно определить.</strong>
+              </div>
+            </div>
+            </div>
+            <div class="modal-footer">
+              <button id="sendData" type="submit" class="btn btn-primary" data-bs-dismiss="modal">Отправить</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="modal fade" id="cabinet" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="deleteModalLabel">Удалить заявку</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p>Вы уверены, что хотите удалить заявку?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button type="button" class="btn btn-danger">Удалить</button>
-        </div>
-      </div>
-    </div>
-  </div>
   <script src="./main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://mapgl.2gis.com/api/js/v1"></script>

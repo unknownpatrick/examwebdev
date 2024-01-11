@@ -10,10 +10,36 @@ let filteredRoutes;
 const itemsPerPage = 5;
 let currentPage = 1;
 
+const HOLIDAYS = [
+    "1-1", // 1 января
+    "1-2", // 2 января
+    "1-3", // 3 января
+    "1-4", // 4 января
+    "1-5", // 5 января
+    "1-6", // 6 января
+    "1-7", // 7 января
+    "1-8", // 8 января
+    "2-23", // 23 февраля
+    "3-8", // 8 марта
+    "5-1", // 1 мая
+    "5-9", // 9 мая
+    "6-12", // 12 июня
+    "11-4", // 4 ноября
+]; 
+
+const orderModal = document.getElementById('orderModal');
+
+const dateField = orderModal.querySelector('#orderDate');
+const timeField = orderModal.querySelector('#startTime');
+const durationField = orderModal.querySelector('#orderDuration');
+const personsField = orderModal.querySelector('#personsCount');
+const priceField = orderModal.querySelector('#price');
+
+const studentField = orderModal.querySelector('#isStudent');
+const extraField = orderModal.querySelector('#isExtra');
 
 function clearTable() {
-    const tableBody = document.getElementById('routesTableBody');
-    tableBody.innerHTML = '';
+    document.getElementById('routesTableBody').innerHTML = '';
 }
 
 function addRoutesToTable(routes) {
@@ -27,45 +53,182 @@ function addRoutesToTable(routes) {
 
         const selectButton = document.createElement('button');
         selectButton.innerText = 'Выбрать';
-        selectButton.addEventListener('click', () => guideDownload(route.id));
+        selectButton.addEventListener('click', () => guideDownload(route));
         row.insertCell(3).appendChild(selectButton);
     });
 }
 
-function guideDownload(id) {
-    let guideTable = document.querySelector('.guide-table');
+function isThisDayOff(dateString) {
+    let date = new Date(dateString);
+    let day = date.getDay();
+    let MonthDay = (date.getMonth() + 1) + '-' + date.getDate();
+
+    if (day === 0 || day === 6 || HOLIDAYS.includes(MonthDay)) {
+        return 1.5; 
+    }
+
+    return 1;
+}
+
+function getTimeExtra(startTime) {
+    let time = startTime.split(":");
+    let hours = parseInt(time[0]); 
+
+    if (hours <= 12) {        
+        return 400;
+    } else if (hours >= 20) { 
+        return 1000;
+    }
+
+    return 0;
+}
+
+function calculateCost(guideCost, duration, 
+    date, startTime, 
+    personsNumber, students, extra
+) {
+    let price = guideCost * duration * isThisDayOff(date);
+    price += personsNumber > 5 && personsNumber <= 10 ? 1000 : 0;
+    price += personsNumber > 10 && personsNumber <= 20 ? 1500 : 0;
+    price += extra ? personsNumber * 500 : 0;
+    price *= students ? 0.85 : 1;
+
+    return Math.floor(price);
+}
+
+function calculateOrderCost() {
+    console.log("calculationg");
+
+    const date = dateField.value;
+    const time = timeField.value;
+    const duration = durationField.value;
+    const persons = personsField.value;
+                     
+    const student = studentField.checked;
+    const extra = extraField.checked;
+
+    const cost = calculateCost(orderModal.guide.pricePerHour, duration, date,
+        time, persons, student, extra);
+
+    priceField.textContent = cost + ' руб.';
+                                  
+    return cost;
+}
+
+function setModalWindow(route, guide) {
+    console.log('setting modal')
+    orderModal.guide = guide;
+
+    orderModal.querySelector('#routeName').value = route.name;
+    orderModal.querySelector('#guideFullName').value = guide.name;
+
+    calculateOrderCost();
+
+    orderModal.querySelector('#sendData').onclick = async () => {
+        const formData = new FormData();
+
+        formData.append("route_id", route.id);
+        formData.append("guide_id", guide.id);
+        formData.append("date", dateField.value);
+        formData.append("time", timeField.value);
+        formData.append("duration", durationField.value);
+        formData.append("persons", personsField.value);
+        formData.append("optionFirst", Number(studentField.checked));
+        formData.append("optionSecond", Number(extraField.checked));
+
+        const price = calculateOrderCost();
+
+        formData.append("price", price);
+
+        console.log(formData);
+
+        const requestOptions = {
+            method: 'POST',
+            body: formData,
+            redirect: 'follow'
+        };
+
+        let response = await fetch(
+            `${HOST}/api/orders?api_key=${API_KEY}`,
+            requestOptions
+        ).then(response => response.json()); 
+
+    };
+}
+
+function getoptionforselect(q) {
+    return [... new Set(q)];    
+}
+
+function removeOptions(selectElement) {
+    let i, L = selectElement.options.length - 1;
+    for (i = L; i >= 0; i--) {
+        selectElement.remove(i);
+    }
+    const selects = document.getElementById('selectedLanguge');
+    let option = document.createElement('option');
+    option.value = "";
+    option.innerHTML = "Язык экскурсии";
+    selects.appendChild(option);
+}
+
+function guideDownload(route) {
+    let guideTable = document.querySelector('#guideTable');
     let arroption = [];
-    fetch(`${HOST}/api/routes/${id}/guides?api_key=${API_KEY}`)
+    fetch(`${HOST}/api/routes/${route.id}/guides?api_key=${API_KEY}`)
         .then(response => response.json())
         .then(response => {
             arroption = [];
-        
-            removeOptions(document.getElementById('select_language'));
+            removeOptions(document.getElementById('selectedLanguge'));
             guideTable.innerHTML = '';
-            for (let i in response) {
-                console.log(i, 'id guid')
-                let row = document.createElement("tr");
-                row.innerHTML = `
-            <th scope="col" id = "${response[i].name}" name = "${i}"><img src="imgs/1.png"></th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].name}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].language}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].workExperience}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">${response[i].pricePerHour}</th>
-            <th scope="col" id = "${response[i].name}" name = "${i}">
-            <button class = "rounded-3 choose" id = "${response[i].name}" name = "${i}">Выбрать</button></th> 
-            `; // в последнее значение класса, где кнопка, надо будет сунуть свое значение стиля))
-            if ((document.getElementById('guide-input-expfrom').value != '' &&
-            document.getElementById('guide-input-expfrom').value > response[i].workExperience) ||
-            (document.getElementById('guide-input-expto').value != '' &&
-            document.getElementById('guide-input-expto').value < response[i].workExperience) &&
-            document.getElementById('select_language').value == response[i].language) {
-                row.classList.add("d-none");
-            }
-            guideTable.append(row);
-            arroption.push(response[i].language);
-        }
-        console.log(arroption);
-        createselect(getoptionforselect(arroption));
+            for (let item of response) {
+                const row = guideTable.insertRow();
+
+                const guidePhoto = document.createElement('img');
+                guidePhoto.src = './static/profile.png';
+                guidePhoto.alt = 'Фото профиля';
+ 
+                row.insertCell(0).appendChild(guidePhoto);
+                row.insertCell(1).textContent = item.name;
+                row.insertCell(2).textContent = item.language;
+                row.insertCell(3).textContent = item.workExperience;
+                row.insertCell(4).textContent = item.pricePerHour;
+
+                const selectButton = document.createElement('button');
+
+                selectButton.setAttribute('data-bs-toggle', 'modal');
+                selectButton.setAttribute('data-bs-target', '#orderModal');
+                selectButton.textContent = 'Выбрать';
+
+                selectButton.addEventListener('click', () => {
+                    setModalWindow(route, item);
+                });
+
+                row.insertCell(5).appendChild(selectButton);
+
+                const fromExperiense = document.getElementById(
+                    'guideFromExperiense'
+                ).value;
+
+                const toExperiense = document.getElementById(
+                    'guideToExperiense'
+                ).value;
+
+                const selectedLanguage = document.getElementById(
+                    'selectedLanguge'
+                ).value;
+
+                if ((fromExperiense !== '') &&
+                    (fromExperiense > item.workExperience) ||
+                    (toExperiense !== '') &&
+                    (toExperiense < item.workExperience) &&
+                    selectedLanguage === item.language) {
+                    row.classList.add("d-none");
+                }
+                guideTable.append(row);
+                arroption.push(item.language);
+            } 
+            createselect(getoptionforselect(arroption));
         });
 }
   
@@ -230,47 +393,31 @@ function highlightSearchResult(searchKeyword) {
 }
 
 function guideOptions() {
-    let list = document.querySelectorAll('.guide-table tr');
-    let from = Number(document.getElementById('guide-input-expfrom').value);
-    let to = Number(document.getElementById('guide-input-expto').value);
+    let list = document.querySelectorAll('#guideTable tr');
+    let from = Number(document.getElementById('guideFromExperiense').value);
+    let to = Number(document.getElementById('guideToExperiense').value);
+
+    const selectedLanguage = document.getElementById('selectedLanguge');
     for (let i in list) {
         if ((from == 0 || from <= list[i].cells[3].innerHTML) &&
         (to == 0 || to >= list[i].cells[3].innerHTML) &&
-        (document.getElementById('select_language')
-            .options[document.getElementById('select_language').selectedIndex]
-            .innerHTML == 'Язык экскурсии' ||
-        document.getElementById('select_language')
-            .options[document.getElementById('select_language').selectedIndex]
-            .innerHTML == list[i].cells[2].innerHTML)) {
+        (selectedLanguage)
+            .options[selectedLanguage.selectedIndex]
+            .innerHTML === 'Язык экскурсии' ||
+        (selectedLanguage)
+            .options[selectedLanguage.selectedIndex]
+            .innerHTML === list[i].cells[2].innerHTML) {
 
             list[i].classList.remove("d-none");
         } else {
             list[i].classList.add("d-none");
         }
-        console.log(list[i].cells[2].innerHTML);
     }
 }
-
-function getoptionforselect(q) {
-    return [... new Set(q)];    
-}
-
-function removeOptions(selectElement) {
-    let i, L = selectElement.options.length - 1;
-    for (i = L; i >= 0; i--) {
-        selectElement.remove(i);
-    }
-    const selects = document.getElementById('select_language');
-    let option = document.createElement('option');
-    option.value = "";
-    option.innerHTML = "Язык экскурсии";
-    selects.appendChild(option);
-}  
 
 function createselect(arr) {
-    const select = document.getElementById('select_language');
+    const select = document.getElementById('selectedLanguge');
     for (let i in arr) {
-        console.log(arr[i]);
         let opt = document.createElement('option');
         opt.value = i;
         opt.innerHTML = arr[i];
@@ -295,12 +442,19 @@ function clickHandler(event) {
     }
 }
 
-
 window.onload = function() {
-    document.getElementById('guide-input-expfrom').oninput = guideOptions;
-    document.getElementById('guide-input-expto').oninput = guideOptions;
-    document.getElementById('select_language').onchange = guideOptions;
+    document.getElementById('guideFromExperiense').oninput = guideOptions;
+    document.getElementById('guideToExperiense').oninput = guideOptions;
+    document.getElementById('selectedLanguge').onchange = guideOptions;
     const table = document.querySelector('.table');
     table.addEventListener('click', clickHandler);
     fetchRoutesFromApi();
+
+    dateField.addEventListener('change', calculateOrderCost);
+    timeField.addEventListener('change', calculateOrderCost); 
+    durationField.addEventListener('change', calculateOrderCost);
+    personsField.addEventListener('change', calculateOrderCost);
+    priceField.addEventListener('change', calculateOrderCost); 
+    studentField.addEventListener('change', calculateOrderCost);
+    extraField.addEventListener('change', calculateOrderCost);
 };
