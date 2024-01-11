@@ -26,16 +26,16 @@ let filteredRoutes;
 const itemsPerPage = 5;
 let currentPage = 1;
 
-const orderModal = document.getElementById('editModal');
+const editModal = document.getElementById('editModal');
 
-const dateField = orderModal.querySelector('#orderDate');
-const timeField = orderModal.querySelector('#startTime');
-const durationField = orderModal.querySelector('#orderDuration');
-const personsField = orderModal.querySelector('#personsCount');
-const priceField = orderModal.querySelector('#price');
+const dateField = editModal.querySelector('#orderDate');
+const timeField = editModal.querySelector('#startTime');
+const durationField = editModal.querySelector('#orderDuration');
+const personsField = editModal.querySelector('#personsCount');
+const priceField = editModal.querySelector('#price');
 
-const studentField = orderModal.querySelector('#isStudent');
-const extraField = orderModal.querySelector('#isExtra');
+const studentField = editModal.querySelector('#isStudent');
+const extraField = editModal.querySelector('#isExtra');
 
 
 function isThisDayOff(dateString) {
@@ -85,7 +85,7 @@ function calculateOrderCost() {
     const student = studentField.checked;
     const extra = extraField.checked;
 
-    const cost = calculateCost(orderModal.guide.pricePerHour, duration, date,
+    const cost = calculateCost(editModal.guide.pricePerHour, duration, date,
         time, persons, student, extra);
 
     priceField.textContent = cost + ' руб.';
@@ -116,20 +116,19 @@ function handlePageClick(pageNumber) {
 }
 
 function updateModal(order, route, guide) {
-    orderModal.guide = guide;
-
-    const dateField = editModal.querySelector('#orderDate');
-    const timeField = editModal.querySelector('#startTime');
-    const durationField = editModal.querySelector('#orderDuration');
-    const personsField = editModal.querySelector('#personsCount');
-    const priceField = editModal.querySelector('#price');
+    editModal.guide = guide;
 
     editModal.querySelector('#routeName').value = route.name;
     editModal.querySelector('#guideFullName').value = guide.name;
     dateField.value = order.date;
     timeField.value = order.time;
     durationField.value = order.duration;
+    personsField.value = order.persons
     priceField.textContent = order.price + ' руб.';
+
+    studentField.checked = order.optionFirst;
+    extraField.checked = order.optionSecond;
+
     editModal.querySelector('#sendData').onclick = async () => {
         const formData = new FormData();
 
@@ -139,6 +138,8 @@ function updateModal(order, route, guide) {
         formData.append("duration", durationField.value);
         formData.append("persons", personsField.value);
         formData.append("price", calculateOrderCost());
+        formData.append("optionFirst", Number(studentField.checked));
+        formData.append("optionSecond", Number(extraField.checked));
 
         console.log(formData)
 
@@ -196,6 +197,22 @@ async function addRoutesToTable(orders) {
                     '#orderDuration'
                 ).value = order.duration;
                 viewModal.querySelector('#personsCount').value = order.persons;
+
+                const all = document.getElementById('additionsBlock');
+                const first = document.getElementById('firstAddition');
+                const second = document.getElementById('secondAddition');
+
+                all.classList.remove("d-none");
+                first.classList.remove("d-none");
+                second.classList.remove("d-none");
+
+                if (!order.optionFirst && !order.optionSecond) {
+                    all.classList.add("d-none");
+                } else if (!order.optionFirst) {
+                    first.classList.add("d-none");
+                } else if (!order.optionSecond) {
+                    second.classList.add("d-none");
+                }
 
                 viewModal.querySelector(
                     '#personsCount'

@@ -166,7 +166,7 @@ function clearLanguageOptions(selectElement) {
     const option = document.createElement('option');
     option.value = "";
     option.innerHTML = "Язык экскурсии";
-    selects.appendChild(option);
+    select.appendChild(option);
 }
 
 function updateLanguageSelect(languages) {
@@ -186,7 +186,7 @@ function guideDownload(route) {
         .then(response => response.json())
         .then(response => {
             arroption = [];
-            removeOptions(document.getElementById('selectedLanguge'));
+            clearLanguageOptions();
             guideTable.innerHTML = '';
             for (let item of response) {
                 const row = guideTable.insertRow();
@@ -258,7 +258,7 @@ function updateTable() {
         filteredRoutes.slice(startIndex, endIndex) :
         routesData.slice(startIndex, endIndex);
   
-    clearTable();
+    clearRoutesTable();
     addRoutesToTable(currentRoutes);
     updatePagination();
     
@@ -388,7 +388,7 @@ function searchRoutes() {
   
     const limitedRoutes = filteredRoutes.slice(0, itemsPerPage);
   
-    clearTable();
+    clearRoutesTable();
     addRoutesToTable(limitedRoutes);
     updatePaginationAfterSearch(filteredRoutes);
     highlightSearchResult(searchKeyword);
